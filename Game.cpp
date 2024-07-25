@@ -10,37 +10,37 @@
 #define BLACK_COLOR 0x000000
 #define WHITE_COLOR 0xFFFFFF
 
-// --- Глобальные переменные ---
-const int NUM_REC = 2; // Количество летящих прямоугольника (многоугольники)
-const float REC_SIZE = 15.2f; // Размер прямоугольника
-const int PLAYER_RADIUS = 18; // Радиус круга-игрока
-const int ENEMY_SPEED = 320.0f; // Скорость противников
-const float ROTATION_SPEED = 3.2f; // Скорость вращения кругов игрока
-const int PROX_CIRCLES = 8; // Коэффициент близости кругов игрока
-const float CENTER_ZONE_RADIUS = 215.0f; // Радиус центральной зоны, в которую летят прямоугольники
-bool spaceKeyPressed = false; // Отслеживание нажатия пробела
-bool clockwise = true; // Направление вращения
-int score = 0; // Количество очков
+// --- Global variables ---
+const int NUM_REC = 2; // Number of flying rectangles (polygons)
+const float REC_SIZE = 15.2f; // Size of the rectangle
+const int PLAYER_RADIUS = 18; // Radius of the player circle
+const int ENEMY_SPEED = 320.0f; // Enemy speed
+const float ROTATION_SPEED = 3.2f; // Rotation speed of the player's circles
+const int PROX_CIRCLES = 8; // Proximity coefficient of player's circles
+const float CENTER_ZONE_RADIUS = 215.0f; // Radius of the central zone where rectangles fly
+bool spaceKeyPressed = false; // Spacebar press tracking
+bool clockwise = true; // Direction of rotation
+int score = 0; // Number of points
 
-// Структура для представления прямоугольников (противников)
+// Structure for representing rectangles (enemies)
 struct Rectangle {
-    float x, y; // Координаты центра
-    float dx, dy; // Вектор направления
+    float x, y; // Center coordinates
+    float dx, dy; // Direction vector
     uint32_t color;
 };
 
-Rectangle rectangles[NUM_REC]; // Массив прямоугольников
-float playerAngle = 0.0f; // Угол вращения игрока
+Rectangle rectangles[NUM_REC]; // Array of rectangles
+float playerAngle = 0.0f; // Player rotation angle
 
 
-// --- Функции игры ---
-/// <summary>Метод установки / сброса позиции для прямоугольника
-/// <para>i - номер прямоугольника.</para>
+// --- Game functions ---
+/// <summary> Method for setting / resetting the position of a rectangle
+/// <para>i - rectangle number.</para>
 /// </summary>
 static void resetSquare(int i) {
-    int side = rand() % 4; // сторона экрана; 0: вверх, 1: право, 2: низ, 3: лево
+    int side = rand() % 4; // screen side; 0: up, 1: right, 2: down, 3: left
 
-    // Установка начальной позиции прямоугольника в зависимости от выбранной стороны
+    // Setting the initial position of the rectangle depending on the selected side
     switch (side) {
     case 0:
         rectangles[i].x = rand() % SCREEN_WIDTH;
@@ -60,27 +60,27 @@ static void resetSquare(int i) {
         break;
     }
 
-    // SCREEN_WIDTH / 2 и SCREEN_HEIGHT / 2 задают центр экрана
-    // rand() % (int)CENTER_ZONE_RADIUS создает случайное смещение в пределах радиуса центральной зоны
-    // Вычитание CENTER_ZONE_RADIUS / 2 центрирует зону вокруг центра экрана
+    // SCREEN_WIDTH / 2 and SCREEN_HEIGHT / 2 set the center of the screen
+    // rand() % (int)CENTER_ZONE_RADIUS creates a random offset within the radius of the central zone
+    // Subtracting CENTER_ZONE_RADIUS / 2 centers the zone around the center of the screen
     float targetX = SCREEN_WIDTH / 2 + (rand() % (int)CENTER_ZONE_RADIUS) - CENTER_ZONE_RADIUS / 2; //
     float targetY = SCREEN_HEIGHT / 2 + (rand() % (int)CENTER_ZONE_RADIUS) - CENTER_ZONE_RADIUS / 2;
 
-    // Расчет вектора направления движения
+    // Calculation of the direction vector of motion
     float dx = targetX - rectangles[i].x;
     float dy = targetY - rectangles[i].y;
     float length = sqrt(dx * dx + dy * dy);
 
-    // Установка скорости движения с небольшой случайной вариацией
-    float speedFactor = 1.0f + (rand() % 5) * 0.1f; // Скорость будет меняться от 1.0 до 1.4
+    // Setting the speed of movement with a small random variation
+    float speedFactor = 1.0f + (rand() % 5) * 0.1f; // Speed will vary from 1.0 to 1.4
     rectangles[i].dx = (dx / length) * speedFactor;
     rectangles[i].dy = (dy / length) * speedFactor;
 
-    // Случайный выбор цвета прямоугольника (белый или черный)
+    // Random selection of the color of the rectangle (white or black)
     rectangles[i].color = (rand() % 2 == 0) ? WHITE_COLOR : BLACK_COLOR;
 }
 
-/// <summary> Инициализация игры </summary>
+/// <summary> Game initialization </summary>
 void initialize() {
     srand(time(NULL));
     for (int i = 0; i < NUM_REC; ++i) {
@@ -91,13 +91,13 @@ void initialize() {
     spaceKeyPressed = false;
 }
 
-/// <summary> Обновление состояния игры (логика) </summary>
-/// <param name="dt">- Delta Time, Промежуток времени между кадрами </param>
+/// <summary> Updating the state of the game (logic) </summary>
+/// <param name="dt">- Delta Time, The time interval between frames </param>
 void act(float dt) {
     if (is_key_pressed(VK_ESCAPE))
         schedule_quit_game();
-    
-    // Пробел для изменения направления вращения
+
+    // Space to change the direction of rotation
     if (is_key_pressed(VK_SPACE)) {
         if (!spaceKeyPressed) {
             clockwise = !clockwise;
@@ -108,43 +108,43 @@ void act(float dt) {
         spaceKeyPressed = false;
     }
 
-    // Обновление угла поворота игрока
+    // Update player rotation angle
     playerAngle += (clockwise ? 1 : -1) * ROTATION_SPEED * dt;
 
-    // Обновление позиций прямоугольников
+    // Update rectangle positions
     for (int i = 0; i < NUM_REC; ++i) {
         rectangles[i].x += rectangles[i].dx * ENEMY_SPEED * dt;
         rectangles[i].y += rectangles[i].dy * ENEMY_SPEED * dt;
-        
-        // Если центр прямоугольника находится дальше, чем REC_SIZE за любым из краёв экрана,
-        // считается, что прямоугольник покинул игровое поле
+
+        // If the center of the rectangle is further than REC_SIZE behind any of the edges of the screen,
+        // it is considered that the rectangle has left the playing field
         if (rectangles[i].x < -REC_SIZE || rectangles[i].x > SCREEN_WIDTH + REC_SIZE ||
             rectangles[i].y < -REC_SIZE || rectangles[i].y > SCREEN_HEIGHT + REC_SIZE) {
             resetSquare(i);
         }
     }
 
-    // j == 0 соответствует первому кругу, j == 1 - второму
-    // SCREEN_WIDTH / 2 и SCREEN_HEIGHT / 2 задают центр вращения (центр экрана)
-    // (SCREEN_WIDTH / PROX_CIRCLES) определяет радиус вращения
-    // cos(playerAngle) и sin(playerAngle) вычисляют позицию на окружности
+    // j == 0 corresponds to the first circle, j == 1 - to the second
+    // SCREEN_WIDTH / 2 and SCREEN_HEIGHT / 2 set the center of rotation (center of the screen)
+    // (SCREEN_WIDTH / PROX_CIRCLES) determines the radius of rotation
+    // cos(playerAngle) and sin(playerAngle) calculate the position on the circle
     for (int j = 0; j < 2; ++j) {
         int playerX = SCREEN_WIDTH / 2 + (j == 0 ? -1 : 1) * (SCREEN_WIDTH / PROX_CIRCLES) * cos(playerAngle);
-        int playerY = SCREEN_HEIGHT / 2 + (j == 0 ? -1 : 1) * (SCREEN_HEIGHT / PROX_CIRCLES) * sin(playerAngle);
+        int playerY = SCREEN_HEIGHT / 2 + (j == 0 ? -1 : 1) * (SCREEN_WIDTH / PROX_CIRCLES) * sin(playerAngle);
 
         for (int i = 0; i < NUM_REC; ++i) {
-            // Проверка расстояния между кругом игрока и прямоугольником
+            // Checking the distance between the player's circle and the rectangle
             float dx = playerX - rectangles[i].x;
             float dy = playerY - rectangles[i].y;
             float distanceSquared = dx * dx + dy * dy;
 
             if (distanceSquared < pow(REC_SIZE + PLAYER_RADIUS, 2)) {
-                // Обработка столкновения
+                // Collision handling
                 if (rectangles[i].color == WHITE_COLOR) {
-                    score += 5; // Увеличение счета при столкновении с белым прямоугольником
+                    score += 5; // Increase the score when colliding with a white rectangle
                 }
                 else {
-                    initialize(); // Сброс игры при столкновении с черным прямоугольником
+                    initialize(); // Reset the game when colliding with a black rectangle
                     return;
                 }
                 resetSquare(i);
@@ -154,25 +154,25 @@ void act(float dt) {
     }
 }
 
-/// <summary> Отрисовка текста с очками на экране </summary>
+/// <summary> Drawing the text with points on the screen </summary>
 void show_score() {
-    draw_number(SCREEN_WIDTH - 150, 50, score, WHITE_COLOR); // Корректируем позицию для больших чисел
+    draw_number(SCREEN_WIDTH - 150, 50, score, WHITE_COLOR); // Adjust the position for large numbers
 }
 
-/// <summary> Отрисовка всех элементов игры на экране </summary>
+/// <summary> Drawing all game elements on the screen </summary>
 void draw() {
-    uint32_t gray = 0x808080; // цвет фона серый
+    uint32_t gray = 0x808080; // background color is gray
     memset(buffer, gray, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
 
-    // Отрисовка прямоугольников
+    // Drawing rectangles
     for (int i = 0; i < NUM_REC; ++i) {
         drawRect(rectangles[i].x - REC_SIZE, rectangles[i].y - REC_SIZE, 2 * REC_SIZE, 2 * REC_SIZE, rectangles[i].color);
     }
 
-    // Отрисовка кругов игрока
+    // Drawing player circles
     for (int i = 0; i < 2; ++i) {
         int playerX = SCREEN_WIDTH / 2 + (i == 0 ? -1 : 1) * (SCREEN_WIDTH / PROX_CIRCLES) * cos(playerAngle);
-        int playerY = SCREEN_HEIGHT / 2 + (i == 0 ? -1 : 1) * (SCREEN_HEIGHT / PROX_CIRCLES) * sin(playerAngle);
+        int playerY = SCREEN_HEIGHT / 2 + (i == 0 ? -1 : 1) * (SCREEN_WIDTH / PROX_CIRCLES) * sin(playerAngle);
         drawCircle(playerX, playerY, PLAYER_RADIUS, WHITE_COLOR);
     }
 
@@ -180,5 +180,5 @@ void draw() {
 }
 
 void finalize() {
-    //  Нет динамических структур данных и объектов, созданных в куче
+    //  There are no dynamic data structures and objects created on the heap
 }
